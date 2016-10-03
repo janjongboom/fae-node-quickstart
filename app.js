@@ -10,13 +10,14 @@ var express = require('express');
 var MbedConnectorApi = require('mbed-connector-api');
 
 // CONFIG (change these)
-var accessKey = process.env.ACCESS_KEY || "ChangeMe";
+var accessKey = process.env.ACCESS_KEY || "QK4YZTT7GE9L6GWT4R250R3PZR4AFDNYX6UBCNR8";
 var port = process.env.PORT || 8080;
 
 // Paths to resources on the endpoints
-var blinkResourceURI = '/3201/0/5850';
-var blinkPatternResourceURI = '/3201/0/5853';
-var buttonResourceURI = '/3200/0/5501';
+var blinkResourceURI = '/led/0/play';
+var blinkPatternResourceURI = '/led/0/pattern';
+var buttonResourceURI = '/button/0/clicks';
+var lcdTextResourceURI = '/lcd/0/text';
 
 // Instantiate an mbed Device Connector object
 var mbedConnectorApi = new MbedConnectorApi({
@@ -39,8 +40,13 @@ app.get('/', function (req, res) {
       var functionArray = endpoints.map(function(endpoint) {
         return function(mapCallback) {
           mbedConnectorApi.getResourceValue(endpoint.name, blinkPatternResourceURI, function(error, value) {
-            endpoint.blinkPattern = value;
-            mapCallback(error);
+            console.log('blink is', value);
+            mbedConnectorApi.getResourceValue(endpoint.name, lcdTextResourceURI, function(err, lcdText) {
+              console.log('lcd is', lcdText);
+              endpoint.blinkPattern = value;
+              endpoint.lcdText = lcdText;
+              mapCallback(error);
+            });
           });
         };
       });
@@ -57,7 +63,7 @@ app.get('/', function (req, res) {
         }
       });
     }
-  });
+  }, { parameters: { type: 'test' } });
 });
 
 // Handle unexpected server errors
@@ -116,6 +122,12 @@ io.on('connection', function (socket) {
       if (error) throw error;
     });
   });
+  
+  socket.on('update-lcd-text', function(data) {
+    mbedConnectorApi.putResourceValue(data.endpointName, lcdTextResourceURI, data.lcdText, function(err) {
+      console.log('updated text', err);
+    })
+  })
 
   socket.on('blink', function(data) {
     // POST to resource /3201/0/5850 (start blinking LED)

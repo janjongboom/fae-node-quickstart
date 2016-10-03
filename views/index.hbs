@@ -56,6 +56,15 @@
                   <button class="blink">Blink (POST)</button>
                 </div>
               </div>
+
+              <div class="row">
+                <div>
+                  <input type="text" value="{{lcdText}}" class="lcd-text">
+                </div>
+                <div>
+                  <button class="update-lcd-text">Update LCD Text</button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -111,6 +120,13 @@
             });
 
             $(this).removeClass('active');
+          });
+          
+          _this.find('.update-lcd-text').on('click', function() {
+            socket.emit('update-lcd-text', {
+              endpointName: _this.attr('id'),
+              lcdText: _this.find('.lcd-text').val()
+            });
           });
 
           _this.find('.blink').on('click', function() {
